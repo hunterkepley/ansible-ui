@@ -18,6 +18,7 @@ import { useCollectionStatus } from './common/useCollectionStatus';
 import { useAutomationLeaderboardHelpText } from './common/useAutomationLeaderboardHelpText';
 import { useCanEditAutomationAnalyticsSettings } from './common/useCanEditAutomationAnalyticsSettings';
 import { AwxError } from '../../common/AwxError';
+import { DashboardAccessCard } from './DashboardAccessCard';
 
 export function AutomationAnalyticsSettingsDetails() {
   const { t } = useTranslation();
@@ -55,6 +56,7 @@ export function AutomationAnalyticsSettingsDetails() {
           {data?.show_leaderboard ? t('Enabled') : t('Disabled')}
         </PageDetail>
       </PageDetails>
+      <DashboardAccessCard />
     </PageLayout>
   );
 }
