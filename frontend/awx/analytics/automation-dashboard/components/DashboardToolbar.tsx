@@ -58,6 +58,8 @@ export function DashboardToolbar(
        * actions. Defaults to `toolbarFilters`.
        */
       validationFilters?: IToolbarFilter[];
+      /** Whether the current user may create/update/delete saved reports. */
+      canSaveReports?: boolean;
     }
   >
 ) {
@@ -82,6 +84,7 @@ export function DashboardToolbar(
     toolbarFilters,
     periodFilter,
     validationFilters = toolbarFilters,
+    canSaveReports,
   } = props;
 
   // Register callback to reset dropdown when clearAllFilters is called
@@ -143,6 +146,7 @@ export function DashboardToolbar(
     selectedFilterSet,
     onDelete: onFilterSetDelete,
     onSave,
+    canSaveReports,
   });
 
   const onSelect = useCallback(

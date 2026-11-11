@@ -7,22 +7,27 @@ import { useRef, useState } from 'react';
 import { awxErrorAdapter } from '../../../common/adapters/awxErrorAdapter';
 import { metricsAPI } from '../../../common/api/metrics-utils';
 import { usePutRequest } from '../../../../common/crud/usePutRequest';
-import { useAwxActiveUser } from '../../../common/useAwxActiveUser';
 import { useSerializedSave } from '../views/useSerializedSave';
 
 const SWITCH_ID = 'switch-time-taken-automation';
 
 export function DashboardTableToolbarRow(props: DashboardTableToolbarProps) {
-  const { costState, setCostState, refresh } = props;
+  const {
+    costState,
+    setCostState,
+    refresh,
+    useGlobalSettings,
+    settingsOrganizationId,
+    canEditSettings,
+  } = props;
   const { t } = useTranslation();
   const alertToaster = usePageAlertToaster();
   const putRequest = usePutRequest<ISubscriptionCosts, ISubscriptionCosts>();
-  const { activeAwxUser } = useAwxActiveUser();
   const [errors, setErrors] = useState<Partial<Record<keyof ISubscriptionCosts, string>> | null>(
     null
   );
 
-  const controlsDisabled = !costState || !activeAwxUser?.is_superuser;
+  const controlsDisabled = !costState || !canEditSettings;
 
   // Local edits not yet confirmed by the server. Every PUT is built on top of
   // them, so a quick edit of another field cannot resend a stale value. The ref
@@ -36,12 +41,14 @@ export function DashboardTableToolbarRow(props: DashboardTableToolbarProps) {
     setUnsavedCostState(value);
   };
 
+  const subscriptionCostUrl = (id: number): string =>
+    useGlobalSettings || settingsOrganizationId === undefined
+      ? metricsAPI`/dashboard_reports/subscription_costs/${id}/`
+      : metricsAPI`/dashboard_reports/subscription_costs/${id}/?organization=${settingsOrganizationId}`;
+
   const enqueueSave = useSerializedSave<ISubscriptionCosts, ISubscriptionCosts>({
     save: (updatedCostState) =>
-      putRequest(
-        metricsAPI`/dashboard_reports/subscription_costs/${updatedCostState.id}/`,
-        updatedCostState
-      ),
+      putRequest(subscriptionCostUrl(updatedCostState.id), updatedCostState),
     onSuccess: async (savedState) => {
       updateUnsavedCostState(undefined);
       if (setCostState) {

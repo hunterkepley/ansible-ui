@@ -152,7 +152,9 @@ describe('useAutomationDashboardToolbarActions', () => {
 
       const action = renderActions(nonDefaultFilterState, undefined)[0] as IPageActionButton;
 
-      expect(action.isDisabled).toBe('Only administrators can save reports');
+      expect(action.isDisabled).toBe(
+        'You need change permission on the selected organizations to save reports'
+      );
     });
 
     test('should disable the button even on non-default filter state when user is not a superuser', () => {
@@ -258,7 +260,9 @@ describe('useAutomationDashboardToolbarActions', () => {
       mockActiveAwxUser.is_superuser = false;
       const action = renderActions(defaultFilterState, filterSet)[0] as Dropdown;
       const subAction = getDropdownSubAction(action, 'Delete report');
-      expect(subAction?.isDisabled).toBe('Only administrators can delete reports');
+      expect(subAction?.isDisabled).toBe(
+        'You need change permission on the selected organizations to delete reports'
+      );
     });
 
     test('should enable "Delete report" for superusers', () => {
@@ -281,21 +285,27 @@ describe('useAutomationDashboardToolbarActions', () => {
       mockActiveAwxUser.is_superuser = false;
       const action = renderActions(nonDefaultFilterState, filterSet)[0] as Dropdown;
       const subAction = getDropdownSubAction(action, 'Create new report');
-      expect(subAction?.isDisabled).toBe('Only administrators can save reports');
+      expect(subAction?.isDisabled).toBe(
+        'You need change permission on the selected organizations to save reports'
+      );
     });
 
     test('should disable "Update report" with admin-only message when user is not a superuser', () => {
       mockActiveAwxUser.is_superuser = false;
       const action = renderActions(nonDefaultFilterState, filterSet)[0] as Dropdown;
       const subAction = getDropdownSubAction(action, 'Update report');
-      expect(subAction?.isDisabled).toBe('Only administrators can save reports');
+      expect(subAction?.isDisabled).toBe(
+        'You need change permission on the selected organizations to save reports'
+      );
     });
 
     test('should disable "Update report" with admin-only message even when the filter state is default', () => {
       mockActiveAwxUser.is_superuser = false;
       const action = renderActions(defaultFilterState, filterSet)[0] as Dropdown;
       const subAction = getDropdownSubAction(action, 'Update report');
-      expect(subAction?.isDisabled).toBe('Only administrators can save reports');
+      expect(subAction?.isDisabled).toBe(
+        'You need change permission on the selected organizations to save reports'
+      );
     });
 
     test('should contain exactly 3 sub-actions', () => {

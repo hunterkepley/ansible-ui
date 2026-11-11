@@ -4,7 +4,13 @@ import { readPersistedFilterState, writePersistedFilterState } from '../utils/pe
 import { useAwxActiveUser } from '../../../common/useAwxActiveUser';
 import { metricsAPI } from '../../../common/api/metrics-utils';
 import { AutomationDashboardDateRangeFilterPresets } from '../constants';
-import { IAutomationDashboardView, IJobTemplate, ReportType } from '../types';
+import {
+  IAutomationDashboardCollectionStatus,
+  IAutomationDashboardOrganizationAccess,
+  IAutomationDashboardView,
+  IJobTemplate,
+  ReportType,
+} from '../types';
 import { useGetReportDetails } from './useGetReportDetails';
 import { useSubscriptionCostState } from './useSubscriptionCostState';
 import { useExportCsv } from './useExportCsv';
@@ -42,8 +48,9 @@ function isDefaultFilterState(filterState: IFilterState | undefined): boolean {
 
 export function useAutomationDashboardView(options: {
   toolbarFilters: IToolbarFilter[];
+  collectionStatus?: IAutomationDashboardCollectionStatus;
 }): IAutomationDashboardView {
-  const { toolbarFilters } = options;
+  const { toolbarFilters, collectionStatus } = options;
 
   // Scope persisted filters to the active user: sessionStorage survives logout,
   // so without this a second user logging in on the same tab would inherit the
@@ -124,7 +131,35 @@ export function useAutomationDashboardView(options: {
   );
 
   const detailsResponse = useGetReportDetails(toolbarFilters, filterState, QUERY_PARAMS);
-  const { costState, setCostState } = useSubscriptionCostState();
+
+  const accessOrganizations = collectionStatus?.organizations ?? [];
+  const accessScope = collectionStatus?.scope ?? 'none';
+  const selectedOrgIds = filterState?.organization ?? [];
+  let settingsOrganization: IAutomationDashboardOrganizationAccess | undefined;
+  if (selectedOrgIds.length === 1) {
+    settingsOrganization = accessOrganizations.find((org) => String(org.id) === selectedOrgIds[0]);
+  } else if (selectedOrgIds.length === 0 && accessOrganizations.length === 1) {
+    settingsOrganization = accessOrganizations[0];
+  }
+  const useGlobalSettings = accessScope === 'global';
+  // TODO(ANSTRAT-2508): org settings are deferred in the metrics-service PoC. Once the
+  // org-shared settings model lands, use settingsOrganization?.can_edit here. Until then
+  // only a system administrator can write settings.
+  const canEditSettings = useGlobalSettings ? !!activeAwxUser?.is_superuser : false;
+  const settingsOrganizationId = useGlobalSettings ? undefined : settingsOrganization?.id;
+  const canSaveReports = useGlobalSettings
+    ? !!activeAwxUser?.is_superuser
+    : accessOrganizations.length > 0 &&
+      (selectedOrgIds.length > 0
+        ? selectedOrgIds.every(
+            (id) => accessOrganizations.find((org) => String(org.id) === id)?.can_edit === true
+          )
+        : accessOrganizations.every((org) => org.can_edit));
+
+  const { costState, setCostState } = useSubscriptionCostState(
+    settingsOrganizationId,
+    useGlobalSettings
+  );
 
   const [loading, setLoading] = useState(false);
 
@@ -162,6 +197,10 @@ export function useAutomationDashboardView(options: {
       detailsLoading: detailsResponse.isLoading,
       costState,
       setCostState,
+      useGlobalSettings,
+      settingsOrganizationId,
+      canEditSettings,
+      canSaveReports,
       loading,
       refresh,
       exportCsv,
@@ -175,6 +214,10 @@ export function useAutomationDashboardView(options: {
       detailsResponse.isLoading,
       costState,
       setCostState,
+      useGlobalSettings,
+      settingsOrganizationId,
+      canEditSettings,
+      canSaveReports,
       loading,
       refresh,
       exportCsv,

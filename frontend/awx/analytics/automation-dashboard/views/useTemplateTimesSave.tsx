@@ -25,11 +25,18 @@ type TemplateTimesErrors = Record<number, Partial<Record<keyof IJobTemplateModif
  */
 export function useTemplateTimesSave(
   mainTableView: IAutomationDashboardView['mainTableView'],
-  refresh: IAutomationDashboardView['refresh']
+  refresh: IAutomationDashboardView['refresh'],
+  settingsOrganizationId: number | undefined = undefined,
+  useGlobalSettings = false
 ) {
   const { t } = useTranslation();
   const putRequest = usePutRequest<IJobTemplateModify, IJobTemplateModify>();
   const alertToaster = usePageAlertToaster();
+
+  const templateMetadataUrl = (templateId: number): string =>
+    useGlobalSettings || settingsOrganizationId === undefined
+      ? metricsAPI`/dashboard_reports/template_metadata/${templateId.toString()}/`
+      : metricsAPI`/dashboard_reports/template_metadata/${templateId.toString()}/?organization=${settingsOrganizationId}`;
 
   const [errors, setErrors] = useState<TemplateTimesErrors | null>(null);
 
@@ -39,8 +46,7 @@ export function useTemplateTimesSave(
   const unsavedTemplateTimesRef = useRef(new Map<number, IJobTemplateModify>());
 
   const enqueueTemplateSave = useSerializedSave<ITemplateTimesSave, IJobTemplateModify>({
-    save: ({ item, data }) =>
-      putRequest(metricsAPI`/dashboard_reports/template_metadata/${item.id.toString()}/`, data),
+    save: ({ item, data }) => putRequest(templateMetadataUrl(item.id), data),
     onSuccess: async (updatedData, { item }) => {
       unsavedTemplateTimesRef.current.delete(item.id);
       mainTableView.updateItem({ ...item, ...updatedData });

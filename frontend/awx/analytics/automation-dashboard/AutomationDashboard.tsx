@@ -14,6 +14,7 @@ import {
 import { useAutomationDashboardView } from './views/useAutomationDashboardView';
 import { DashboardToolbar } from './components/DashboardToolbar';
 import { DashboardGridRow, DashboardLayout } from './components/DashboardLayout';
+import { useAutomationDashboardCollectionStatus } from './common/useAutomationDashboardCollectionStatus';
 
 /** Breakpoint range (in grid columns) where value cards switch from 'md' to 'xs' size. */
 const WIDE_LAYOUT_MIN_COLUMNS = 16;
@@ -29,8 +30,9 @@ export function AutomationDashboard() {
     [periodFilter, toolbarFilters]
   );
   const getPageUrl = useGetPageUrl();
+  const { collectionStatus } = useAutomationDashboardCollectionStatus();
 
-  const view = useAutomationDashboardView({ toolbarFilters: allFilters });
+  const view = useAutomationDashboardView({ toolbarFilters: allFilters, collectionStatus });
   const { details } = view;
 
   const noDataString = t('No jobs have been run.');
@@ -192,6 +194,7 @@ export function AutomationDashboard() {
         {...view.mainTableView}
         keyFn={(item) => item.id}
         registerClearCallback={view.registerClearCallback}
+        canSaveReports={view.canSaveReports}
       />
       <DashboardLayout>{renderDashboardContent}</DashboardLayout>
     </>
