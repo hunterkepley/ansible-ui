@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'reac
 import { useSWRConfig } from 'swr';
 import { ISubscriptionCosts } from '../types';
 import {
-  subscriptionCostsUrl,
+  SUBSCRIPTION_COSTS_URL,
   useGetReportSubscriptionCosts,
 } from './useGetReportSubscriptionCosts';
 
@@ -29,12 +29,8 @@ interface ISubscriptionCostState {
  * record is also written into the SWR cache of the list GET, so remounting the
  * dashboard does not briefly show the value from before the save.
  */
-export function useSubscriptionCostState(
-  organizationId: number | undefined = undefined,
-  useGlobalSettings = false
-): ISubscriptionCostState {
-  const { subscriptionCosts } = useGetReportSubscriptionCosts(organizationId, useGlobalSettings);
-  const costsUrl = subscriptionCostsUrl(organizationId, useGlobalSettings);
+export function useSubscriptionCostState(): ISubscriptionCostState {
+  const { subscriptionCosts } = useGetReportSubscriptionCosts();
   const [costState, setCostState] = useState<ISubscriptionCosts | undefined>(undefined);
   const [isPristine, setIsPristine] = useState(true);
   const { mutate } = useSWRConfig();
@@ -63,13 +59,13 @@ export function useSubscriptionCostState(
       setCostState(value);
       if (value && typeof value !== 'function') {
         void mutate<ISubscriptionCosts[]>(
-          costsUrl,
+          SUBSCRIPTION_COSTS_URL,
           (cached) => cached?.map((costs) => (costs.id === value.id ? value : costs)),
           { revalidate: false }
         );
       }
     },
-    [costsUrl, mutate]
+    [mutate]
   );
 
   return { costState, setCostState: handleSetCostState };

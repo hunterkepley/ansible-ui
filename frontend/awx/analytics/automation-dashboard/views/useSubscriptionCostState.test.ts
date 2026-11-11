@@ -13,7 +13,6 @@ const { mockUseGetReportSubscriptionCosts } = vi.hoisted(() => ({
 
 vi.mock('./useGetReportSubscriptionCosts', () => ({
   SUBSCRIPTION_COSTS_URL: '/subscription_costs/',
-  subscriptionCostsUrl: vi.fn(() => '/subscription_costs/'),
   useGetReportSubscriptionCosts: mockUseGetReportSubscriptionCosts,
 }));
 

@@ -130,9 +130,6 @@ function buildProps(overrides: Partial<IAutomationDashboardView> = {}): IAutomat
       include_template_creation_time_in_costs: false,
     },
     setCostState: vi.fn(),
-    useGlobalSettings: true,
-    settingsOrganizationId: undefined,
-    canEditSettings: true,
     canSaveReports: true,
     loading: false,
     refresh: mockRefresh,
@@ -389,16 +386,17 @@ describe('DashboardMainTableCard', () => {
 
   // --- Superuser vs non-superuser cell rendering ---
 
-  test('should show plain value for time_taken_manually_execute_minutes when settings are read-only', () => {
-    renderCard(buildProps({ canEditSettings: false }));
+  test('should show plain value for time_taken_manually_execute_minutes when not superuser', () => {
+    mockUseAwxActiveUser.mockReturnValue({ activeAwxUser: { is_superuser: false } });
+    renderCard();
     expect(screen.queryByTestId('time_taken_manually_execute_minutes_1')).not.toBeInTheDocument();
     expect(screen.getByText('30')).toBeInTheDocument();
   });
 
-  test('should show plain value for time_taken_create_automation_minutes when settings are read-only and column is visible', () => {
+  test('should show plain value for time_taken_create_automation_minutes when not superuser and column is visible', () => {
+    mockUseAwxActiveUser.mockReturnValue({ activeAwxUser: { is_superuser: false } });
     renderCard(
       buildProps({
-        canEditSettings: false,
         costState: {
           id: 1,
           monthly_subscription_cost: 100,

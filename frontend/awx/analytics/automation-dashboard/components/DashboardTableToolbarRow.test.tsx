@@ -48,9 +48,6 @@ function buildProps(
     costState: defaultCostState,
     setCostState: mockSetCostState,
     refresh: mockRefresh,
-    useGlobalSettings: true,
-    settingsOrganizationId: undefined,
-    canEditSettings: true,
     ...overrides,
   };
 }
@@ -120,14 +117,16 @@ describe('DashboardTableToolbarRow', () => {
   });
 
   // --- Inputs disabled ---
-  test('should disable cost inputs and switch when settings are read-only', () => {
-    renderRow(buildProps({ canEditSettings: false }));
+  test('should disable cost inputs and switch when not superuser', () => {
+    mockUseAwxActiveUser.mockReturnValue({ activeAwxUser: { is_superuser: false } });
+    renderRow();
     expect(screen.getByTestId('engineer_avg_hourly_rate')).toBeDisabled();
     expect(screen.getByTestId('monthly_subscription_cost')).toBeDisabled();
     expect(screen.getByTestId('switch-time-taken-automation-toggle')).toBeDisabled();
   });
 
-  test('should not call put when settings are read-only', async () => {
+  test('should not call put when not superuser', async () => {
+    mockUseAwxActiveUser.mockReturnValue({ activeAwxUser: { is_superuser: false } });
     let putCalled = false;
     server.use(
       http.put(/subscription_costs/, () => {
@@ -135,13 +134,13 @@ describe('DashboardTableToolbarRow', () => {
         return HttpResponse.json({});
       })
     );
-    renderRow(buildProps({ canEditSettings: false }));
+    renderRow();
     const input = screen.getByTestId('engineer_avg_hourly_rate');
 
     // Dispatch a change event directly on the disabled input, bypassing the
     // browser-level disabled guard.  The debounce fires after 600 ms and calls
     // toolbarChangeHandler, which must return early because controlsDisabled is
-    // true (canEditSettings: false).  This proves the in-component guard — not
+    // true (is_superuser: false).  This proves the in-component guard — not
     // merely the disabled attribute — is what prevents the PUT.
     // Must dispatch change on a disabled input to prove the in-component guard blocks PUT.
     // fireEvent.change is intentional: disabled inputs reject userEvent

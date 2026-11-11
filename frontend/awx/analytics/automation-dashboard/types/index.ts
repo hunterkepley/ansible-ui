@@ -174,9 +174,6 @@ export type DashboardTableToolbarProps = {
   costState: ISubscriptionCosts | undefined;
   setCostState: Dispatch<SetStateAction<ISubscriptionCosts | undefined>> | undefined;
   refresh: () => Promise<void>;
-  useGlobalSettings: boolean;
-  settingsOrganizationId: number | undefined;
-  canEditSettings: boolean;
 };
 
 // ─── View Type ────────────────────────────────────────────────────────────────
@@ -188,9 +185,6 @@ export type IAutomationDashboardView = {
   detailsLoading: boolean;
   costState: ISubscriptionCosts | undefined;
   setCostState: Dispatch<SetStateAction<ISubscriptionCosts | undefined>>;
-  useGlobalSettings: boolean;
-  settingsOrganizationId: number | undefined;
-  canEditSettings: boolean;
   canSaveReports: boolean;
   loading: boolean;
   refresh: () => Promise<void>;

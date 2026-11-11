@@ -5,6 +5,7 @@ import { IAutomationDashboardView, IJobTemplate } from '../types';
 import { DashboardTableInputField } from './DashboardTableInputField';
 import { DashboardTableToolbarRow } from './DashboardTableToolbarRow';
 import { currencyFormatter } from '../../utilities/currencyFormatter';
+import { useAwxActiveUser } from '../../../common/useAwxActiveUser';
 import { useResizeObserver } from '@ansible/ansible-ui-framework/hooks/useResizeObserver';
 import { CardBody } from '@patternfly/react-core';
 import styled from 'styled-components';
@@ -45,11 +46,9 @@ export function DashboardMainTableCard(props: IAutomationDashboardView) {
     isFilterStateDefault,
     toolbarFilters,
     topCardsWidth,
-    useGlobalSettings,
-    settingsOrganizationId,
-    canEditSettings,
   } = props;
   const { t } = useTranslation();
+  const { activeAwxUser } = useAwxActiveUser();
 
   const ref = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(1);
@@ -65,12 +64,7 @@ export function DashboardMainTableCard(props: IAutomationDashboardView) {
     setColumns(calculateGridColumns(entry.contentRect.width));
   });
 
-  const { errors, onTableInputChange } = useTemplateTimesSave(
-    mainTableView,
-    refresh,
-    settingsOrganizationId,
-    useGlobalSettings
-  );
+  const { errors, onTableInputChange } = useTemplateTimesSave(mainTableView, refresh);
 
   const tableInputField = (columnKey: keyof IJobTemplateModify, item: IJobTemplate) => (
     <div style={{ width: `${TIME_COLUMN_WIDTH}px` }}>
@@ -95,7 +89,7 @@ export function DashboardMainTableCard(props: IAutomationDashboardView) {
       'Time taken to create the automation for the job template. This is used to calculate the total time spent on automation, which includes both the time taken to create the automation and the time taken to execute it.'
     ),
     cell: (item) =>
-      canEditSettings
+      activeAwxUser?.is_superuser
         ? tableInputField('time_taken_create_automation_minutes', item)
         : tableCell('time_taken_create_automation_minutes', item, TIME_COLUMN_WIDTH),
   };
@@ -147,7 +141,7 @@ export function DashboardMainTableCard(props: IAutomationDashboardView) {
       maxWidth: TIME_COLUMN_WIDTH,
       minWidth: TIME_COLUMN_WIDTH,
       cell: (item) =>
-        canEditSettings
+        activeAwxUser?.is_superuser
           ? tableInputField('time_taken_manually_execute_minutes', item)
           : tableCell('time_taken_manually_execute_minutes', item, TIME_COLUMN_WIDTH),
     },
@@ -211,9 +205,6 @@ export function DashboardMainTableCard(props: IAutomationDashboardView) {
           costState={costState}
           setCostState={setCostState}
           refresh={refresh}
-          useGlobalSettings={useGlobalSettings}
-          settingsOrganizationId={settingsOrganizationId}
-          canEditSettings={canEditSettings}
         ></DashboardTableToolbarRow>
         <div
           ref={ref}

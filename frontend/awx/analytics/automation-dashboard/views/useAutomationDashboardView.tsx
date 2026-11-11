@@ -6,7 +6,6 @@ import { metricsAPI } from '../../../common/api/metrics-utils';
 import { AutomationDashboardDateRangeFilterPresets } from '../constants';
 import {
   IAutomationDashboardCollectionStatus,
-  IAutomationDashboardOrganizationAccess,
   IAutomationDashboardView,
   IJobTemplate,
   ReportType,
@@ -135,31 +134,17 @@ export function useAutomationDashboardView(options: {
   const accessOrganizations = collectionStatus?.organizations ?? [];
   const accessScope = collectionStatus?.scope ?? 'none';
   const selectedOrgIds = filterState?.organization ?? [];
-  let settingsOrganization: IAutomationDashboardOrganizationAccess | undefined;
-  if (selectedOrgIds.length === 1) {
-    settingsOrganization = accessOrganizations.find((org) => String(org.id) === selectedOrgIds[0]);
-  } else if (selectedOrgIds.length === 0 && accessOrganizations.length === 1) {
-    settingsOrganization = accessOrganizations[0];
-  }
-  const useGlobalSettings = accessScope === 'global';
-  // TODO(ANSTRAT-2508): org settings are deferred in the metrics-service PoC. Once the
-  // org-shared settings model lands, use settingsOrganization?.can_edit here. Until then
-  // only a system administrator can write settings.
-  const canEditSettings = useGlobalSettings ? !!activeAwxUser?.is_superuser : false;
-  const settingsOrganizationId = useGlobalSettings ? undefined : settingsOrganization?.id;
-  const canSaveReports = useGlobalSettings
-    ? !!activeAwxUser?.is_superuser
-    : accessOrganizations.length > 0 &&
-      (selectedOrgIds.length > 0
-        ? selectedOrgIds.every(
-            (id) => accessOrganizations.find((org) => String(org.id) === id)?.can_edit === true
-          )
-        : accessOrganizations.every((org) => org.can_edit));
+  const canSaveReports =
+    accessScope === 'global'
+      ? !!activeAwxUser?.is_superuser
+      : accessOrganizations.length > 0 &&
+        (selectedOrgIds.length > 0
+          ? selectedOrgIds.every(
+              (id) => accessOrganizations.find((org) => String(org.id) === id)?.can_edit === true
+            )
+          : accessOrganizations.every((org) => org.can_edit));
 
-  const { costState, setCostState } = useSubscriptionCostState(
-    settingsOrganizationId,
-    useGlobalSettings
-  );
+  const { costState, setCostState } = useSubscriptionCostState();
 
   const [loading, setLoading] = useState(false);
 
@@ -197,9 +182,6 @@ export function useAutomationDashboardView(options: {
       detailsLoading: detailsResponse.isLoading,
       costState,
       setCostState,
-      useGlobalSettings,
-      settingsOrganizationId,
-      canEditSettings,
       canSaveReports,
       loading,
       refresh,
@@ -214,9 +196,6 @@ export function useAutomationDashboardView(options: {
       detailsResponse.isLoading,
       costState,
       setCostState,
-      useGlobalSettings,
-      settingsOrganizationId,
-      canEditSettings,
       canSaveReports,
       loading,
       refresh,
