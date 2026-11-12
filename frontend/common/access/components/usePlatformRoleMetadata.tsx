@@ -122,6 +122,8 @@ export function usePlatformRoleMetadata(): PlatformRoleMetadata {
             'shared.change_organization': t('Can change organization'),
             'shared.delete_organization': t('Can delete organization'),
             'shared.view_organization': t('Can view organization'),
+            'shared.view_automation_dashboard': t('Can view automation dashboard'),
+            'shared.change_automation_dashboard': t('Can change automation dashboard'),
             'awx.update_project': t('Can update project'),
             'awx.use_project': t('Can use project'),
             'awx.add_project': t('Can add project'),
