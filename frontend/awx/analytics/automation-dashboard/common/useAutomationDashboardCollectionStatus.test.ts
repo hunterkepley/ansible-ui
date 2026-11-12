@@ -212,6 +212,22 @@ describe('useAutomationDashboardCollectionStatus', () => {
       expect(result.current.canSeeDashboard).toBe(true);
     });
 
+    test('should not expose the dashboard for an org-scoped response without access', () => {
+      setupActiveUser({ is_superuser: false, is_system_auditor: false });
+      setupSWR({
+        enabled: true,
+        last_sync: null,
+        show_dashboard: false,
+        show_leaderboard: false,
+        scope: 'organization',
+        organizations: [{ id: 1, name: 'Org B', can_edit: false }],
+      });
+
+      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
+
+      expect(result.current.canSeeDashboard).toBe(false);
+    });
+
     test('should not allow a superuser to see the dashboard when show_dashboard is false', () => {
       setupActiveUser({ is_superuser: true });
       setupSWR({
