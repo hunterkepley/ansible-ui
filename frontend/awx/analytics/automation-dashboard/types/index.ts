@@ -71,12 +71,22 @@ export interface IDashboardFilterSet {
   is_default: boolean;
 }
 
+export interface IAutomationDashboardOrganizationAccess {
+  id: number;
+  name: string | null;
+  can_edit: boolean;
+}
+
 export interface IAutomationDashboardCollectionStatus {
   enabled: boolean | null;
   /** ISO 8601 string as returned by the API (useFetcher applies no date reviver), or null. */
   last_sync?: string | null;
   show_dashboard: boolean | null;
   show_leaderboard: boolean | null;
+  /** global = platform admin/auditor; organization = dashboard role on one or more orgs. */
+  scope?: 'global' | 'organization' | 'none';
+  /** Organizations the caller may view, with their per-organization edit capability. */
+  organizations?: IAutomationDashboardOrganizationAccess[];
 }
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
@@ -175,6 +185,7 @@ export type IAutomationDashboardView = {
   detailsLoading: boolean;
   costState: ISubscriptionCosts | undefined;
   setCostState: Dispatch<SetStateAction<ISubscriptionCosts | undefined>>;
+  canSaveReports: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
   exportCsv: (reportType: ReportType) => Promise<void>;

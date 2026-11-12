@@ -627,8 +627,8 @@ describe('useAutomationLeaderboardsView', () => {
     });
 
     await waitFor(() => expect(leaderboardRequests).toBe(1));
-    // The view as a whole still reports loading until the role is known.
-    expect(result.current.isLoading).toBe(true);
+    // Access is resolved by collection_status, so the view does not wait for /me/.
+    expect(result.current.isLoading).toBe(false);
   });
 
   test('should refetch the leaderboard when collection_status reports a new last_sync', async () => {

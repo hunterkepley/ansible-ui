@@ -4,7 +4,12 @@ import { readPersistedFilterState, writePersistedFilterState } from '../utils/pe
 import { useAwxActiveUser } from '../../../common/useAwxActiveUser';
 import { metricsAPI } from '../../../common/api/metrics-utils';
 import { AutomationDashboardDateRangeFilterPresets } from '../constants';
-import { IAutomationDashboardView, IJobTemplate, ReportType } from '../types';
+import {
+  IAutomationDashboardCollectionStatus,
+  IAutomationDashboardView,
+  IJobTemplate,
+  ReportType,
+} from '../types';
 import { useGetReportDetails } from './useGetReportDetails';
 import { useSubscriptionCostState } from './useSubscriptionCostState';
 import { useExportCsv } from './useExportCsv';
@@ -42,8 +47,9 @@ function isDefaultFilterState(filterState: IFilterState | undefined): boolean {
 
 export function useAutomationDashboardView(options: {
   toolbarFilters: IToolbarFilter[];
+  collectionStatus?: IAutomationDashboardCollectionStatus;
 }): IAutomationDashboardView {
-  const { toolbarFilters } = options;
+  const { toolbarFilters, collectionStatus } = options;
 
   // Scope persisted filters to the active user: sessionStorage survives logout,
   // so without this a second user logging in on the same tab would inherit the
@@ -124,6 +130,20 @@ export function useAutomationDashboardView(options: {
   );
 
   const detailsResponse = useGetReportDetails(toolbarFilters, filterState, QUERY_PARAMS);
+
+  const accessOrganizations = collectionStatus?.organizations ?? [];
+  const accessScope = collectionStatus?.scope ?? 'none';
+  const selectedOrgIds = filterState?.organization ?? [];
+  const canSaveReports =
+    accessScope === 'global'
+      ? !!activeAwxUser?.is_superuser
+      : accessOrganizations.length > 0 &&
+        (selectedOrgIds.length > 0
+          ? selectedOrgIds.every(
+              (id) => accessOrganizations.find((org) => String(org.id) === id)?.can_edit === true
+            )
+          : accessOrganizations.every((org) => org.can_edit));
+
   const { costState, setCostState } = useSubscriptionCostState();
 
   const [loading, setLoading] = useState(false);
@@ -162,6 +182,7 @@ export function useAutomationDashboardView(options: {
       detailsLoading: detailsResponse.isLoading,
       costState,
       setCostState,
+      canSaveReports,
       loading,
       refresh,
       exportCsv,
@@ -175,6 +196,7 @@ export function useAutomationDashboardView(options: {
       detailsResponse.isLoading,
       costState,
       setCostState,
+      canSaveReports,
       loading,
       refresh,
       exportCsv,

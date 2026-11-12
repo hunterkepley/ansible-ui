@@ -130,6 +130,7 @@ function buildProps(overrides: Partial<IAutomationDashboardView> = {}): IAutomat
       include_template_creation_time_in_costs: false,
     },
     setCostState: vi.fn(),
+    canSaveReports: true,
     loading: false,
     refresh: mockRefresh,
     exportCsv: vi.fn(),

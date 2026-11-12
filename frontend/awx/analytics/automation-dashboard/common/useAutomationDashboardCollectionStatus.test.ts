@@ -54,21 +54,6 @@ function setupPlatformUser(activePlatformUser?: Partial<PlatformUser>) {
   });
 }
 
-/** A mounted provider whose /me/ request has not settled yet (user undefined, refresh function set). */
-function setupPendingAwxUser() {
-  vi.mocked(useAwxActiveUser).mockReturnValue({
-    activeAwxUser: undefined,
-    refreshActiveAwxUser: vi.fn(),
-  });
-}
-
-function setupPendingPlatformUser() {
-  vi.mocked(usePlatformActiveUser).mockReturnValue({
-    activePlatformUser: undefined,
-    refreshActivePlatformUser: vi.fn(),
-  });
-}
-
 function setupSWR(data?: IAutomationDashboardCollectionStatus, error?: Error) {
   vi.mocked(useSWR).mockReturnValue({
     data,
@@ -211,13 +196,31 @@ describe('useAutomationDashboardCollectionStatus', () => {
       expect(result.current.canSeeDashboard).toBe(true);
     });
 
-    test('should not allow a regular user to see the dashboard even when show_dashboard is true', () => {
+    test('should allow a regular user when the server grants dashboard access', () => {
       setupActiveUser({ is_superuser: false, is_system_auditor: false });
       setupSWR({
         enabled: true,
         last_sync: null,
         show_dashboard: true,
         show_leaderboard: false,
+        scope: 'organization',
+        organizations: [{ id: 1, name: 'Org A', can_edit: false }],
+      });
+
+      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
+
+      expect(result.current.canSeeDashboard).toBe(true);
+    });
+
+    test('should not expose the dashboard for an org-scoped response without access', () => {
+      setupActiveUser({ is_superuser: false, is_system_auditor: false });
+      setupSWR({
+        enabled: true,
+        last_sync: null,
+        show_dashboard: false,
+        show_leaderboard: false,
+        scope: 'organization',
+        organizations: [{ id: 1, name: 'Org B', can_edit: false }],
       });
 
       const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
@@ -261,127 +264,6 @@ describe('useAutomationDashboardCollectionStatus', () => {
 
       expect(result.current.canSeeDashboard).toBe(false);
       expect(result.current.canSeeLeaderboard).toBe(false);
-    });
-  });
-
-  describe('role pending (/me/ not settled yet)', () => {
-    const showBoth: IAutomationDashboardCollectionStatus = {
-      enabled: true,
-      last_sync: null,
-      show_dashboard: true,
-      show_leaderboard: true,
-    };
-
-    test('should stay loading while the AWX user is pending and show_dashboard is true', () => {
-      setupPendingAwxUser();
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(true);
-    });
-
-    test('should report the request itself as settled while only the role is pending', () => {
-      setupPendingAwxUser();
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(true);
-      expect(result.current.isRequestLoading).toBe(false);
-    });
-
-    test('should stay loading while the Platform user is pending and show_dashboard is true', () => {
-      setupPendingPlatformUser();
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(true);
-    });
-
-    test('should not wait for the Platform user once the AWX user already grants access', () => {
-      setupActiveUser({ is_superuser: true });
-      setupPendingPlatformUser();
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.canSeeDashboard).toBe(true);
-    });
-
-    test('should not wait for the AWX user once the Platform user already grants access', () => {
-      setupPendingAwxUser();
-      setupPlatformUser({ is_platform_auditor: true });
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.canSeeDashboard).toBe(true);
-    });
-
-    test('should keep waiting for the Platform user when the AWX user alone does not grant access', () => {
-      setupActiveUser({ is_superuser: false, is_system_auditor: false });
-      setupPendingPlatformUser();
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(true);
-    });
-
-    test('should not wait for the user role when show_dashboard is false', () => {
-      setupPendingAwxUser();
-      setupPendingPlatformUser();
-      setupSWR({ ...showBoth, show_dashboard: false });
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.canSeeLeaderboard).toBe(true);
-    });
-
-    test('should not treat an unmounted provider (empty context) as pending', () => {
-      vi.mocked(useAwxActiveUser).mockReturnValue({});
-      vi.mocked(usePlatformActiveUser).mockReturnValue({});
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.canSeeDashboard).toBe(false);
-    });
-
-    test('should not treat a user that failed to load (null) as pending', () => {
-      vi.mocked(useAwxActiveUser).mockReturnValue({
-        activeAwxUser: null,
-        refreshActiveAwxUser: vi.fn(),
-      });
-      setupSWR(showBoth);
-
-      const { result } = renderHook(() => useAutomationDashboardCollectionStatus());
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.canSeeDashboard).toBe(false);
-    });
-
-    test('should go straight from loading to both views for a superuser once /me/ settles', () => {
-      setupPendingAwxUser();
-      setupSWR(showBoth);
-
-      const { result, rerender } = renderHook(() => useAutomationDashboardCollectionStatus());
-      expect(result.current.isLoading).toBe(true);
-
-      setupActiveUser({ is_superuser: true });
-      act(() => {
-        rerender();
-      });
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.canSeeDashboard).toBe(true);
-      expect(result.current.canSeeLeaderboard).toBe(true);
     });
   });
 
